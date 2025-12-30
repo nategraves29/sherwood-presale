@@ -667,7 +667,7 @@
             const tierPricing = {
                 'Escentials': 29,
                 'Escentials+': 39,
-                'Unlimited Plus': 59
+                'Unlimited +': 59
             };
 
             const emptySignup = {
@@ -677,7 +677,8 @@
                 dogName: '',
                 dogBreed: '',
                 dogBreedLevel: null,
-                tier: 'Escentials'
+                tier: 'Escentials',
+                myTimeLink: ''
             };
 
             const [currentEntry, setCurrentEntry] = useState({
@@ -740,25 +741,49 @@
             };
 
             const saveEntry = async () => {
-                // Validate
-                const validSignups = currentEntry.signups.filter(s => 
-                    s.memberName.trim() && s.dogName.trim()
-                );
-
-                if (validSignups.length === 0) {
-                    alert('Please add at least one sign-up with member name and dog name.');
+                // Validate team member name
+                const teamMemberName = currentEntry.teamMember?.trim() || userName?.trim();
+                if (!teamMemberName) {
+                    alert('Please enter your name in the "Your Name" field.');
                     return;
                 }
 
-                if (!currentEntry.teamMember.trim() && !userName.trim()) {
-                    alert('Please enter your name.');
+                // Validate each signup has all required fields
+                const missingFields = [];
+                const validSignups = [];
+                
+                currentEntry.signups.forEach((signup, index) => {
+                    const signupMissing = [];
+                    const signupNum = index + 1;
+                    
+                    if (!signup.memberName?.trim()) signupMissing.push('Member Name');
+                    if (!signup.phone?.trim()) signupMissing.push('Phone');
+                    if (!signup.email?.trim()) signupMissing.push('Email');
+                    if (!signup.dogName?.trim()) signupMissing.push('Dog Name');
+                    if (!signup.dogBreed?.trim()) signupMissing.push('Dog Breed');
+                    if (!signup.myTimeLink?.trim()) signupMissing.push('MyTime Profile Link');
+                    
+                    if (signupMissing.length > 0) {
+                        missingFields.push(`Sign-up #${signupNum}: ${signupMissing.join(', ')}`);
+                    } else {
+                        validSignups.push(signup);
+                    }
+                });
+
+                if (missingFields.length > 0) {
+                    alert('Please fill in all required fields:\n\n' + missingFields.join('\n'));
+                    return;
+                }
+
+                if (validSignups.length === 0) {
+                    alert('Please add at least one complete sign-up.');
                     return;
                 }
 
                 try {
                     const entryToSave = {
                         ...currentEntry,
-                        teamMember: currentEntry.teamMember || userName,
+                        teamMember: teamMemberName,
                         signups: validSignups,
                         createdAt: new Date().toISOString()
                     };
@@ -953,7 +978,7 @@
                     return;
                 }
 
-                const headers = ['Date', 'Member Name', 'Phone', 'Email', 'Dog Name', 'Breed', 'Breed Level', 'Tier', 'Monthly Price', 'Signed By'];
+                const headers = ['Date', 'Member Name', 'Phone', 'Email', 'Dog Name', 'Breed', 'Breed Level', 'Tier', 'Monthly Price', 'MyTime Profile', 'Signed By'];
                 const rows = allSignups.map(signup => [
                     signup.date,
                     signup.memberName,
@@ -964,6 +989,7 @@
                     signup.dogBreedLevel || '',
                     signup.tier,
                     tierPricing[signup.tier] || '',
+                    signup.myTimeLink || '',
                     signup.teamMember
                 ]);
 
@@ -1256,7 +1282,7 @@
                                     </div>
                                     <div className="form-grid">
                                         <div>
-                                            <label className="form-label">Member Name *</label>
+                                            <label className="form-label">Member Name <span style={{ color: '#ef4444' }}>*</span></label>
                                             <input
                                                 type="text"
                                                 value={signup.memberName}
@@ -1266,7 +1292,7 @@
                                             />
                                         </div>
                                         <div>
-                                            <label className="form-label">Phone</label>
+                                            <label className="form-label">Phone <span style={{ color: '#ef4444' }}>*</span></label>
                                             <input
                                                 type="tel"
                                                 value={signup.phone}
@@ -1276,7 +1302,7 @@
                                             />
                                         </div>
                                         <div>
-                                            <label className="form-label">Email</label>
+                                            <label className="form-label">Email <span style={{ color: '#ef4444' }}>*</span></label>
                                             <input
                                                 type="email"
                                                 value={signup.email}
@@ -1286,7 +1312,7 @@
                                             />
                                         </div>
                                         <div>
-                                            <label className="form-label">Dog Name *</label>
+                                            <label className="form-label">Dog Name <span style={{ color: '#ef4444' }}>*</span></label>
                                             <input
                                                 type="text"
                                                 value={signup.dogName}
@@ -1297,7 +1323,7 @@
                                         </div>
                                         <div>
                                             <label className="form-label">
-                                                Dog Breed
+                                                Dog Breed <span style={{ color: '#ef4444' }}>*</span>
                                                 {signup.dogBreedLevel && (
                                                     <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '8px' }}>
                                                         Level {signup.dogBreedLevel}
@@ -1311,7 +1337,7 @@
                                             />
                                         </div>
                                         <div>
-                                            <label className="form-label">Membership Tier</label>
+                                            <label className="form-label">Membership Tier <span style={{ color: '#ef4444' }}>*</span></label>
                                             <select
                                                 value={signup.tier}
                                                 onChange={(e) => updateSignup(index, 'tier', e.target.value)}
@@ -1319,8 +1345,18 @@
                                             >
                                                 <option value="Escentials">Escentials ($29/mo)</option>
                                                 <option value="Escentials+">Escentials+ ($39/mo)</option>
-                                                <option value="Unlimited Plus">Unlimited Plus ($59/mo)</option>
+                                                <option value="Unlimited +">Unlimited + ($59/mo)</option>
                                             </select>
+                                        </div>
+                                        <div style={{ gridColumn: '1 / -1' }}>
+                                            <label className="form-label">MyTime Profile Link <span style={{ color: '#ef4444' }}>*</span></label>
+                                            <input
+                                                type="url"
+                                                value={signup.myTimeLink}
+                                                onChange={(e) => updateSignup(index, 'myTimeLink', e.target.value)}
+                                                className="form-input"
+                                                placeholder="Paste MyTime profile URL here..."
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -1420,18 +1456,27 @@
                                         
                                         <div style={{ display: 'grid', gap: '10px' }}>
                                             {entry.signups.map((signup, idx) => (
-                                                <div key={idx} style={{ background: 'white', padding: '12px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <div>
-                                                        <strong>{signup.memberName}</strong> - {signup.dogName} 
-                                                        ({signup.dogBreed || 'N/A'}
-                                                        {signup.dogBreedLevel && (
-                                                            <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '4px', fontSize: '0.7em' }}>
-                                                                L{signup.dogBreedLevel}
-                                                            </span>
-                                                        )})
-                                                        <div style={{ fontSize: '0.85em', color: '#666' }}>{signup.phone} • {signup.email}</div>
+                                                <div key={idx} style={{ background: 'white', padding: '12px', borderRadius: '6px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <div>
+                                                            <strong>{signup.memberName}</strong> - {signup.dogName} 
+                                                            ({signup.dogBreed || 'N/A'}
+                                                            {signup.dogBreedLevel && (
+                                                                <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '4px', fontSize: '0.7em' }}>
+                                                                    L{signup.dogBreedLevel}
+                                                                </span>
+                                                            )})
+                                                            <div style={{ fontSize: '0.85em', color: '#666' }}>{signup.phone} • {signup.email}</div>
+                                                            {signup.myTimeLink && (
+                                                                <div style={{ fontSize: '0.85em', marginTop: '4px' }}>
+                                                                    <a href={signup.myTimeLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0077B6' }}>
+                                                                        📋 MyTime Profile
+                                                                    </a>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span>
                                                     </div>
-                                                    <span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -1461,6 +1506,7 @@
                                         <th>Dog Name</th>
                                         <th>Breed</th>
                                         <th>Tier</th>
+                                        <th>MyTime</th>
                                         <th>Signed By</th>
                                     </tr>
                                 </thead>
@@ -1481,6 +1527,13 @@
                                                 )}
                                             </td>
                                             <td><span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span></td>
+                                            <td>
+                                                {signup.myTimeLink ? (
+                                                    <a href={signup.myTimeLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0077B6' }}>
+                                                        View
+                                                    </a>
+                                                ) : '-'}
+                                            </td>
                                             <td>{signup.teamMember}</td>
                                         </tr>
                                     ))}
