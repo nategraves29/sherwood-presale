@@ -344,6 +344,65 @@
             color: #FF6B35;
         }
 
+        .level-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .level-1 {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .level-2 {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .level-3 {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .breed-autocomplete {
+            position: relative;
+        }
+
+        .breed-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #00A0DC;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .breed-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .breed-option:hover {
+            background: #f0f9ff;
+        }
+
+        .breed-option.selected {
+            background: #e6f7ff;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -396,7 +455,192 @@
     </script>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
+
+        // Scenthound Breed Database with Levels
+        const breedDatabase = [
+            // Level 1 Breeds
+            { name: 'American Bulldog', level: 1 },
+            { name: 'Australian Cattle Dog', level: 1 },
+            { name: 'American Pit Bull Terrier', level: 1 },
+            { name: 'Basset Hound', level: 1 },
+            { name: 'Beagle', level: 1 },
+            { name: 'Bichon Frise', level: 1 },
+            { name: 'Black Mouth Cur', level: 1 },
+            { name: 'Boston Terrier', level: 1 },
+            { name: 'Boxer', level: 1 },
+            { name: 'Bull Terrier', level: 1 },
+            { name: 'Cavalier King Charles Spaniel', level: 1 },
+            { name: 'Chihuahua (Long-haired)', level: 1 },
+            { name: 'Chihuahua (Short-haired)', level: 1 },
+            { name: 'Cocker Spaniel', level: 1 },
+            { name: 'Dachshund (Long-haired)', level: 1 },
+            { name: 'Dachshund (Short-haired)', level: 1 },
+            { name: 'Doberman Pinscher', level: 1 },
+            { name: 'Doodle (Toy)', level: 1 },
+            { name: 'English Bulldog', level: 1 },
+            { name: 'French Bulldog', level: 1 },
+            { name: 'German Shorthaired Pointer', level: 1 },
+            { name: 'Havanese', level: 1 },
+            { name: 'Jack Russell Terrier', level: 1 },
+            { name: 'Maltese', level: 1 },
+            { name: 'Miniature Pinscher', level: 1 },
+            { name: 'Pomeranian', level: 1 },
+            { name: 'Poodle (Toy)', level: 1 },
+            { name: 'Pug', level: 1 },
+            { name: 'Schnauzer (Mini)', level: 1 },
+            { name: 'Shiba Inu', level: 1 },
+            { name: 'Shih Tzu', level: 1 },
+            { name: 'Welsh Corgi', level: 1 },
+            { name: 'Yorkshire Terrier', level: 1 },
+            // Level 2 Breeds
+            { name: 'Australian Shepherd', level: 2 },
+            { name: 'Belgian Malinois', level: 2 },
+            { name: 'Belgian Tervuren', level: 2 },
+            { name: 'Border Collie', level: 2 },
+            { name: 'Cane Corso', level: 2 },
+            { name: 'Doodle (Mini)', level: 2 },
+            { name: 'German Shepherd', level: 2 },
+            { name: 'Golden Retriever', level: 2 },
+            { name: 'Great Dane', level: 2 },
+            { name: 'Irish Setter', level: 2 },
+            { name: 'English Setter', level: 2 },
+            { name: 'Labrador Retriever', level: 2 },
+            { name: 'Mastiff', level: 2 },
+            { name: 'Poodle (Mini/Moyen)', level: 2 },
+            { name: 'Portuguese Water Dog', level: 2 },
+            { name: 'Rottweiler', level: 2 },
+            { name: 'Schnauzer (Standard)', level: 2 },
+            { name: 'Siberian Husky', level: 2 },
+            // Level 3 Breeds
+            { name: 'Doodle (Standard)', level: 3 },
+            { name: 'Goldendoodle', level: 3 },
+            { name: 'Labradoodle', level: 3 },
+            { name: 'Great Pyrenees', level: 3 },
+            { name: 'Irish Wolfhound', level: 3 },
+            { name: 'Malamute', level: 3 },
+            { name: 'Old English Sheepdog', level: 3 },
+            { name: 'Poodle (Standard)', level: 3 },
+            { name: 'Schnauzer (Giant)', level: 3 },
+            { name: 'St. Bernard', level: 3 },
+            { name: 'Wooly Husky', level: 3 },
+        ].sort((a, b) => a.name.localeCompare(b.name));
+
+        // Breed Autocomplete Component
+        const BreedAutocomplete = ({ value, onChange, onLevelChange }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [search, setSearch] = useState(value || '');
+            const [highlightedIndex, setHighlightedIndex] = useState(0);
+            const inputRef = useRef(null);
+            const dropdownRef = useRef(null);
+
+            const filteredBreeds = breedDatabase.filter(breed =>
+                breed.name.toLowerCase().includes(search.toLowerCase())
+            );
+
+            useEffect(() => {
+                setSearch(value || '');
+            }, [value]);
+
+            useEffect(() => {
+                const handleClickOutside = (e) => {
+                    if (dropdownRef.current && !dropdownRef.current.contains(e.target) &&
+                        inputRef.current && !inputRef.current.contains(e.target)) {
+                        setIsOpen(false);
+                    }
+                };
+                document.addEventListener('mousedown', handleClickOutside);
+                return () => document.removeEventListener('mousedown', handleClickOutside);
+            }, []);
+
+            const selectBreed = (breed) => {
+                setSearch(breed.name);
+                onChange(breed.name);
+                if (onLevelChange) onLevelChange(breed.level);
+                setIsOpen(false);
+            };
+
+            const handleInputChange = (e) => {
+                const val = e.target.value;
+                setSearch(val);
+                onChange(val);
+                setIsOpen(true);
+                setHighlightedIndex(0);
+                
+                // Check if it matches a breed and update level
+                const matchedBreed = breedDatabase.find(b => 
+                    b.name.toLowerCase() === val.toLowerCase()
+                );
+                if (matchedBreed && onLevelChange) {
+                    onLevelChange(matchedBreed.level);
+                } else if (onLevelChange) {
+                    onLevelChange(null);
+                }
+            };
+
+            const handleKeyDown = (e) => {
+                if (!isOpen) {
+                    if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                        setIsOpen(true);
+                    }
+                    return;
+                }
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setHighlightedIndex(prev => 
+                        prev < filteredBreeds.length - 1 ? prev + 1 : prev
+                    );
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setHighlightedIndex(prev => prev > 0 ? prev - 1 : 0);
+                } else if (e.key === 'Enter' && filteredBreeds.length > 0) {
+                    e.preventDefault();
+                    selectBreed(filteredBreeds[highlightedIndex]);
+                } else if (e.key === 'Escape') {
+                    setIsOpen(false);
+                }
+            };
+
+            const getLevelBadgeClass = (level) => {
+                if (level === 1) return 'level-1';
+                if (level === 2) return 'level-2';
+                return 'level-3';
+            };
+
+            return (
+                <div className="breed-autocomplete">
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={search}
+                        onChange={handleInputChange}
+                        onFocus={() => setIsOpen(true)}
+                        onKeyDown={handleKeyDown}
+                        className="form-input"
+                        placeholder="Start typing breed..."
+                        autoComplete="off"
+                    />
+                    {isOpen && filteredBreeds.length > 0 && (
+                        <div className="breed-dropdown" ref={dropdownRef}>
+                            {filteredBreeds.map((breed, index) => (
+                                <div
+                                    key={breed.name}
+                                    className={`breed-option ${index === highlightedIndex ? 'selected' : ''}`}
+                                    onClick={() => selectBreed(breed)}
+                                    onMouseEnter={() => setHighlightedIndex(index)}
+                                >
+                                    <span>{breed.name}</span>
+                                    <span className={`level-badge ${getLevelBadgeClass(breed.level)}`}>
+                                        Level {breed.level}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
 
         const PreSalesTracker = () => {
             const [entries, setEntries] = useState([]);
@@ -432,6 +676,7 @@
                 email: '',
                 dogName: '',
                 dogBreed: '',
+                dogBreedLevel: null,
                 tier: 'Escentials'
             };
 
@@ -684,8 +929,8 @@
                 return allSignups.sort((a, b) => new Date(b.date) - new Date(a.date));
             };
 
-            // Backup/Restore
-            const downloadBackup = () => {
+            // Backup/Restore - JSON
+            const downloadBackupJSON = () => {
                 const backup = {
                     version: '1.0',
                     exportDate: new Date().toISOString(),
@@ -697,6 +942,41 @@
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `sherwood_presales_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            };
+
+            // Backup - CSV
+            const downloadBackupCSV = () => {
+                const allSignups = getAllSignups();
+                if (allSignups.length === 0) {
+                    alert('No data to export.');
+                    return;
+                }
+
+                const headers = ['Date', 'Member Name', 'Phone', 'Email', 'Dog Name', 'Breed', 'Breed Level', 'Tier', 'Monthly Price', 'Signed By'];
+                const rows = allSignups.map(signup => [
+                    signup.date,
+                    signup.memberName,
+                    signup.phone || '',
+                    signup.email || '',
+                    signup.dogName,
+                    signup.dogBreed || '',
+                    signup.dogBreedLevel || '',
+                    signup.tier,
+                    tierPricing[signup.tier] || '',
+                    signup.teamMember
+                ]);
+
+                const csvContent = [
+                    headers.join(','),
+                    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+                ].join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sherwood_presales_${new Date().toISOString().split('T')[0]}.csv`;
                 a.click();
             };
 
@@ -745,6 +1025,12 @@
                 if (tier === 'Escentials') return 'tier-escentials';
                 if (tier === 'Escentials+') return 'tier-escentials-plus';
                 return 'tier-unlimited';
+            };
+
+            const getLevelBadgeClass = (level) => {
+                if (level === 1) return 'level-1';
+                if (level === 2) return 'level-2';
+                return 'level-3';
             };
 
             if (loading) {
@@ -832,33 +1118,59 @@
                                     />
                                 </div>
                             </div>
+                            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e0e0e0' }}>
+                                <h4 style={{ color: '#0077B6', marginBottom: '15px' }}>📁 Backup & Restore</h4>
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    <button onClick={downloadBackupJSON} className="btn" style={{ background: '#22c55e' }}>
+                                        💾 Download JSON Backup
+                                    </button>
+                                    <button onClick={downloadBackupCSV} className="btn" style={{ background: '#3b82f6' }}>
+                                        📊 Download CSV (Excel)
+                                    </button>
+                                    <button onClick={() => fileInputRef.current?.click()} className="btn" style={{ background: '#8b5cf6' }}>
+                                        📂 Restore from JSON
+                                    </button>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleRestore}
+                                        accept=".json"
+                                        style={{ display: 'none' }}
+                                    />
+                                </div>
+                                <p style={{ fontSize: '0.85em', color: '#666', marginTop: '10px' }}>
+                                    💡 <strong>JSON</strong> backup can be restored later. <strong>CSV</strong> is for viewing in Excel/Google Sheets.
+                                </p>
+                            </div>
                         </div>
                     )}
 
-                    {/* Controls */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '20px' }}>
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                            <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="btn">
-                                {showForm ? '✖ Cancel' : '+ Add Sign-ups'}
-                            </button>
-                            {entries.length > 0 && (
-                                <button onClick={downloadBackup} className="btn" style={{ background: '#6b7280' }}>
-                                    💾 Backup
-                                </button>
-                            )}
-                            <button onClick={() => fileInputRef.current?.click()} className="btn" style={{ background: '#0ea5e9' }}>
-                                📂 Restore
-                            </button>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleRestore}
-                                accept=".json"
-                                style={{ display: 'none' }}
-                            />
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                            <label style={{ fontSize: '0.9em', color: '#666' }}>Your Name:</label>
+                    {/* View Tabs */}
+                    <div className="view-tabs">
+                        <button className={`tab ${view === 'dashboard' ? 'active' : ''}`} onClick={() => setView('dashboard')}>
+                            📊 Dashboard
+                        </button>
+                        <button className={`tab ${view === 'entries' ? 'active' : ''}`} onClick={() => setView('entries')}>
+                            📝 Daily Entries
+                        </button>
+                        <button className={`tab ${view === 'signups' ? 'active' : ''}`} onClick={() => setView('signups')}>
+                            🐕 All Sign-ups
+                        </button>
+                        <button className={`tab ${view === 'leaderboard' ? 'active' : ''}`} onClick={() => setView('leaderboard')}>
+                            🏆 Leaderboard
+                        </button>
+                    </div>
+
+                    {/* Add Sign-ups Button & User Name */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+                        <button 
+                            onClick={() => { resetForm(); setShowForm(!showForm); }} 
+                            className={`btn ${showForm ? 'btn-cancel' : 'btn-secondary'}`}
+                        >
+                            {showForm ? '✕ Cancel' : '+ Add Sign-ups'}
+                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <label className="form-label" style={{ margin: 0 }}>Your Name:</label>
                             <input
                                 type="text"
                                 value={userName}
@@ -868,7 +1180,7 @@
                                 }}
                                 className="form-input"
                                 placeholder="Enter your name"
-                                style={{ width: '150px' }}
+                                style={{ width: '180px' }}
                             />
                         </div>
                     </div>
@@ -984,13 +1296,18 @@
                                             />
                                         </div>
                                         <div>
-                                            <label className="form-label">Dog Breed</label>
-                                            <input
-                                                type="text"
+                                            <label className="form-label">
+                                                Dog Breed
+                                                {signup.dogBreedLevel && (
+                                                    <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '8px' }}>
+                                                        Level {signup.dogBreedLevel}
+                                                    </span>
+                                                )}
+                                            </label>
+                                            <BreedAutocomplete
                                                 value={signup.dogBreed}
-                                                onChange={(e) => updateSignup(index, 'dogBreed', e.target.value)}
-                                                className="form-input"
-                                                placeholder="Golden Retriever"
+                                                onChange={(val) => updateSignup(index, 'dogBreed', val)}
+                                                onLevelChange={(level) => updateSignup(index, 'dogBreedLevel', level)}
                                             />
                                         </div>
                                         <div>
@@ -1010,74 +1327,38 @@
                             ))}
 
                             <button onClick={addSignupRow} className="btn" style={{ marginTop: '10px', marginBottom: '20px' }}>
-                                + Add Another Sign-up
+                                + Add Another Dog
                             </button>
 
                             <div style={{ marginTop: '20px' }}>
-                                <label className="form-label">Daily Report / Notes</label>
+                                <label className="form-label">Daily Notes (Optional)</label>
                                 <textarea
                                     value={currentEntry.dailyReport}
                                     onChange={(e) => setCurrentEntry(prev => ({ ...prev, dailyReport: e.target.value }))}
                                     className="form-input"
-                                    rows="4"
-                                    placeholder="End of day summary, notes, observations..."
-                                    style={{ resize: 'vertical' }}
+                                    rows="3"
+                                    placeholder="Any notes about today's sign-ups, events, or observations..."
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                                <button onClick={saveEntry} className="btn btn-success">
-                                    {editingEntry ? '✓ Update Entry' : '✓ Save Entry'}
+                            <div style={{ display: 'flex', gap: '15px', marginTop: '25px' }}>
+                                <button onClick={saveEntry} className="btn btn-success" style={{ flex: 1 }}>
+                                    {editingEntry ? '💾 Update Entry' : '💾 Save Entry'}
                                 </button>
-                                <button onClick={() => { resetForm(); setShowForm(false); }} className="btn btn-cancel">
+                                <button onClick={() => { setShowForm(false); resetForm(); }} className="btn btn-cancel">
                                     Cancel
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    {/* View Tabs */}
-                    <div className="view-tabs">
-                        <button onClick={() => setView('dashboard')} className={`tab ${view === 'dashboard' ? 'active' : ''}`}>
-                            📊 Dashboard
-                        </button>
-                        <button onClick={() => setView('entries')} className={`tab ${view === 'entries' ? 'active' : ''}`}>
-                            📅 Daily Entries
-                        </button>
-                        <button onClick={() => setView('signups')} className={`tab ${view === 'signups' ? 'active' : ''}`}>
-                            📋 All Sign-ups
-                        </button>
-                        <button onClick={() => setView('leaderboard')} className={`tab ${view === 'leaderboard' ? 'active' : ''}`}>
-                            🏆 Leaderboard
-                        </button>
-                    </div>
-
                     {/* Dashboard View */}
                     {view === 'dashboard' && (
-                        <div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-                                <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#0077B6' }}>{getTotalSignups()}</div>
-                                    <div style={{ color: '#666' }}>Total Memberships</div>
-                                </div>
-                                <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#FF6B35' }}>{getTotalMembers()}</div>
-                                    <div style={{ color: '#666' }}>Unique Members</div>
-                                </div>
-                                <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#22c55e' }}>${getTotalMRR()}</div>
-                                    <div style={{ color: '#666' }}>Projected MRR</div>
-                                </div>
-                                <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#8b5cf6' }}>{goal - getTotalSignups()}</div>
-                                    <div style={{ color: '#666' }}>Remaining to Goal</div>
-                                </div>
-                            </div>
-
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                             {/* Tier Breakdown */}
-                            <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
-                                <h3 style={{ color: '#0077B6', marginTop: 0 }}>Membership Tier Breakdown</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '20px' }}>
+                            <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                                <h3 style={{ color: '#0077B6', marginTop: 0 }}>Tier Breakdown</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
                                     {Object.keys(tierPricing).map(tier => {
                                         const count = getAllSignups().filter(s => s.tier === tier).length;
                                         const revenue = count * tierPricing[tier];
@@ -1099,6 +1380,11 @@
                                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #e0e0e0' }}>
                                         <div>
                                             <strong>{signup.memberName}</strong> - {signup.dogName}
+                                            {signup.dogBreedLevel && (
+                                                <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '6px', fontSize: '0.7em' }}>
+                                                    L{signup.dogBreedLevel}
+                                                </span>
+                                            )}
                                             <div style={{ fontSize: '0.85em', color: '#666' }}>by {signup.teamMember} on {signup.date}</div>
                                         </div>
                                         <span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span>
@@ -1136,7 +1422,13 @@
                                             {entry.signups.map((signup, idx) => (
                                                 <div key={idx} style={{ background: 'white', padding: '12px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <div>
-                                                        <strong>{signup.memberName}</strong> - {signup.dogName} ({signup.dogBreed || 'N/A'})
+                                                        <strong>{signup.memberName}</strong> - {signup.dogName} 
+                                                        ({signup.dogBreed || 'N/A'}
+                                                        {signup.dogBreedLevel && (
+                                                            <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '4px', fontSize: '0.7em' }}>
+                                                                L{signup.dogBreedLevel}
+                                                            </span>
+                                                        )})
                                                         <div style={{ fontSize: '0.85em', color: '#666' }}>{signup.phone} • {signup.email}</div>
                                                     </div>
                                                     <span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span>
@@ -1180,7 +1472,14 @@
                                             <td>{signup.phone || '-'}</td>
                                             <td>{signup.email || '-'}</td>
                                             <td>{signup.dogName}</td>
-                                            <td>{signup.dogBreed || '-'}</td>
+                                            <td>
+                                                {signup.dogBreed || '-'}
+                                                {signup.dogBreedLevel && (
+                                                    <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '6px' }}>
+                                                        L{signup.dogBreedLevel}
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td><span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span></td>
                                             <td>{signup.teamMember}</td>
                                         </tr>
