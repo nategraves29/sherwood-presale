@@ -1,1 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sherwood Pre-Sales Tracker - Scenthound</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            background: #f8f8f8;
+        }
 
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 0;
+            box-shadow: none;
+            max-width: 100%;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #00A0DC 0%, #0077B6 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+            font-weight: 400;
+            margin-top: 5px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00A0DC 0%, #0077B6 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 160, 220, 0.3);
+        }
+
+        .btn-secondary {
+            background: #FF6B35;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-cancel {
+            background: #999;
+        }
+
+        .btn-cancel:hover {
+            background: #777;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-success {
+            background: #22c55e;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+        }
+
+        .form-box {
+            background: #f0f9ff;
+            border-left: 5px solid #00A0DC;
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #0077B6;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1em;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #00A0DC;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .view-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 2px solid #00A0DC;
+            background: white;
+            color: #00A0DC;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .tab:hover {
+            background: #e6f7ff;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #00A0DC 0%, #0077B6 100%);
+            color: white;
+            border-color: #0077B6;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .data-table thead {
+            background: linear-gradient(135deg, #00A0DC 0%, #0077B6 100%);
+            color: white;
+        }
+
+        .data-table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .data-table th.text-right {
+            text-align: right;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table td.text-right {
+            text-align: right;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f0f9ff;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            transition: background 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .edit-btn {
+            background: #ffc107;
+            color: #333;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            transition: background 0.2s;
+            margin-right: 5px;
+        }
+
+        .edit-btn:hover {
+            background: #e0a800;
+        }
+
+        .goal-container {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #00A0DC;
+        }
+
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .countdown-box {
+            background: linear-gradient(135deg, #FF6B35 0%, #e55a2b 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .countdown-number {
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .tier-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .tier-escentials {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .tier-escentials-plus {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .tier-unlimited {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .signup-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard-rank {
+            font-size: 1.5em;
+            font-weight: 700;
+            width: 50px;
+            text-align: center;
+        }
+
+        .leaderboard-rank.gold { color: #f59e0b; }
+        .leaderboard-rank.silver { color: #6b7280; }
+        .leaderboard-rank.bronze { color: #b45309; }
+
+        .info-note {
+            background: #fff8f0;
+            border-left: 4px solid #FF6B35;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+
+        .info-note strong {
+            color: #FF6B35;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .data-table {
+                font-size: 0.85em;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Firebase -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      
+      const firebaseConfig = {
+        apiKey: "AIzaSyDhB3UL73Td-AdkHqAwdpe3Pi3V8o8va1I",
+        authDomain: "sherwood-presale.firebaseapp.com",
+        projectId: "sherwood-presale",
+        storageBucket: "sherwood-presale.firebasestorage.app",
+        messagingSenderId: "363379307526",
+        appId: "1:363379307526:web:696d0de48ca8605c48bf87"
+      };
+      
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      
+      // Make Firebase available globally
+      window.firebaseDB = db;
+      window.firestoreCollection = collection;
+      window.firestoreGetDocs = getDocs;
+      window.firestoreAddDoc = addDoc;
+      window.firestoreDeleteDoc = deleteDoc;
+      window.firestoreDoc = doc;
+      window.firestoreUpdateDoc = updateDoc;
+      window.firestoreOnSnapshot = onSnapshot;
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const PreSalesTracker = () => {
+            const [entries, setEntries] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+            const [loading, setLoading] = useState(true);
+            const [view, setView] = useState('dashboard');
+            const [userName, setUserName] = useState(() => localStorage.getItem('presalesUserName') || '');
+            const [editingEntry, setEditingEntry] = useState(null);
+            const [leaderboardMetric, setLeaderboardMetric] = useState('signups');
+            const [deletedEntries, setDeletedEntries] = useState([]);
+            const [showUndoToast, setShowUndoToast] = useState(false);
+            const fileInputRef = React.useRef(null);
+            
+            // Goal and opening date settings
+            const [goal, setGoal] = useState(() => {
+                const saved = localStorage.getItem('presalesGoal');
+                return saved ? parseInt(saved) : 250;
+            });
+            const [openingDate, setOpeningDate] = useState(() => {
+                return localStorage.getItem('presalesOpeningDate') || '';
+            });
+            const [showSettings, setShowSettings] = useState(false);
+
+            const tierPricing = {
+                'Escentials': 29,
+                'Escentials+': 39,
+                'Unlimited Plus': 59
+            };
+
+            const emptySignup = {
+                memberName: '',
+                phone: '',
+                email: '',
+                dogName: '',
+                dogBreed: '',
+                tier: 'Escentials'
+            };
+
+            const [currentEntry, setCurrentEntry] = useState({
+                date: new Date().toISOString().split('T')[0],
+                teamMember: '',
+                signups: [{ ...emptySignup }],
+                dailyReport: ''
+            });
+
+            useEffect(() => {
+                const checkFirebase = setInterval(() => {
+                    if (window.firebaseDB) {
+                        clearInterval(checkFirebase);
+                        loadEntriesFromFirebase();
+                    }
+                }, 100);
+                
+                return () => clearInterval(checkFirebase);
+            }, []);
+
+            const loadEntriesFromFirebase = async () => {
+                try {
+                    const entriesCol = window.firestoreCollection(window.firebaseDB, 'presales_entries');
+                    const snapshot = await window.firestoreGetDocs(entriesCol);
+                    const entriesData = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    setEntries(entriesData.sort((a, b) => new Date(b.date) - new Date(a.date)));
+                } catch (error) {
+                    console.error('Error loading entries:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const addSignupRow = () => {
+                setCurrentEntry(prev => ({
+                    ...prev,
+                    signups: [...prev.signups, { ...emptySignup }]
+                }));
+            };
+
+            const removeSignupRow = (index) => {
+                if (currentEntry.signups.length > 1) {
+                    setCurrentEntry(prev => ({
+                        ...prev,
+                        signups: prev.signups.filter((_, i) => i !== index)
+                    }));
+                }
+            };
+
+            const updateSignup = (index, field, value) => {
+                setCurrentEntry(prev => ({
+                    ...prev,
+                    signups: prev.signups.map((signup, i) => 
+                        i === index ? { ...signup, [field]: value } : signup
+                    )
+                }));
+            };
+
+            const saveEntry = async () => {
+                // Validate
+                const validSignups = currentEntry.signups.filter(s => 
+                    s.memberName.trim() && s.dogName.trim()
+                );
+
+                if (validSignups.length === 0) {
+                    alert('Please add at least one sign-up with member name and dog name.');
+                    return;
+                }
+
+                if (!currentEntry.teamMember.trim() && !userName.trim()) {
+                    alert('Please enter your name.');
+                    return;
+                }
+
+                try {
+                    const entryToSave = {
+                        ...currentEntry,
+                        teamMember: currentEntry.teamMember || userName,
+                        signups: validSignups,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    if (editingEntry) {
+                        const docRef = window.firestoreDoc(window.firebaseDB, 'presales_entries', editingEntry.id);
+                        await window.firestoreDeleteDoc(docRef);
+                        await window.firestoreAddDoc(window.firestoreCollection(window.firebaseDB, 'presales_entries'), entryToSave);
+                        setEditingEntry(null);
+                    } else {
+                        await window.firestoreAddDoc(window.firestoreCollection(window.firebaseDB, 'presales_entries'), entryToSave);
+                    }
+
+                    await loadEntriesFromFirebase();
+                    resetForm();
+                    setShowForm(false);
+                } catch (error) {
+                    console.error('Error saving entry:', error);
+                    alert('Error saving entry. Please try again.');
+                }
+            };
+
+            const resetForm = () => {
+                setCurrentEntry({
+                    date: new Date().toISOString().split('T')[0],
+                    teamMember: userName,
+                    signups: [{ ...emptySignup }],
+                    dailyReport: ''
+                });
+                setEditingEntry(null);
+            };
+
+            const editEntry = (entry) => {
+                setCurrentEntry({
+                    date: entry.date,
+                    teamMember: entry.teamMember,
+                    signups: entry.signups,
+                    dailyReport: entry.dailyReport || ''
+                });
+                setEditingEntry(entry);
+                setShowForm(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const deleteEntry = async (entryId) => {
+                try {
+                    const entry = entries.find(e => e.id === entryId);
+                    setDeletedEntries(prev => [...prev, entry]);
+                    setShowUndoToast(true);
+                    
+                    setTimeout(() => {
+                        setShowUndoToast(false);
+                        setDeletedEntries(prev => prev.filter(e => e.id !== entryId));
+                    }, 10000);
+
+                    const docRef = window.firestoreDoc(window.firebaseDB, 'presales_entries', entryId);
+                    await window.firestoreDeleteDoc(docRef);
+                    await loadEntriesFromFirebase();
+                } catch (error) {
+                    console.error('Error deleting entry:', error);
+                    alert('Error deleting entry. Please try again.');
+                }
+            };
+
+            const undoDelete = async () => {
+                if (deletedEntries.length === 0) return;
+                
+                try {
+                    const lastDeleted = deletedEntries[deletedEntries.length - 1];
+                    const { id, ...entryData } = lastDeleted;
+                    
+                    await window.firestoreAddDoc(window.firestoreCollection(window.firebaseDB, 'presales_entries'), entryData);
+                    
+                    setDeletedEntries(prev => prev.slice(0, -1));
+                    if (deletedEntries.length <= 1) {
+                        setShowUndoToast(false);
+                    }
+                    await loadEntriesFromFirebase();
+                } catch (error) {
+                    console.error('Error restoring entry:', error);
+                    alert('Error restoring entry. Please try again.');
+                }
+            };
+
+            // Calculate totals
+            const getTotalSignups = () => {
+                return entries.reduce((sum, entry) => sum + entry.signups.length, 0);
+            };
+
+            const getTotalMembers = () => {
+                const uniqueEmails = new Set();
+                entries.forEach(entry => {
+                    entry.signups.forEach(signup => {
+                        if (signup.email) uniqueEmails.add(signup.email.toLowerCase());
+                        else if (signup.phone) uniqueEmails.add(signup.phone);
+                        else uniqueEmails.add(signup.memberName.toLowerCase());
+                    });
+                });
+                return uniqueEmails.size;
+            };
+
+            const getTotalMRR = () => {
+                return entries.reduce((sum, entry) => {
+                    return sum + entry.signups.reduce((s, signup) => s + (tierPricing[signup.tier] || 0), 0);
+                }, 0);
+            };
+
+            const getGoalProgress = () => {
+                const total = getTotalSignups();
+                return Math.min((total / goal) * 100, 100);
+            };
+
+            const getDaysUntilOpening = () => {
+                if (!openingDate) return null;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const opening = new Date(openingDate);
+                const diff = Math.ceil((opening - today) / (1000 * 60 * 60 * 24));
+                return diff;
+            };
+
+            // Leaderboard data
+            const getLeaderboardData = () => {
+                const teamStats = {};
+                
+                entries.forEach(entry => {
+                    const member = entry.teamMember;
+                    if (!teamStats[member]) {
+                        teamStats[member] = { signups: 0, members: new Set(), mrr: 0 };
+                    }
+                    
+                    entry.signups.forEach(signup => {
+                        teamStats[member].signups++;
+                        teamStats[member].mrr += tierPricing[signup.tier] || 0;
+                        
+                        const memberId = signup.email?.toLowerCase() || signup.phone || signup.memberName.toLowerCase();
+                        teamStats[member].members.add(memberId);
+                    });
+                });
+
+                return Object.entries(teamStats)
+                    .map(([name, stats]) => ({
+                        name,
+                        signups: stats.signups,
+                        members: stats.members.size,
+                        mrr: stats.mrr
+                    }))
+                    .sort((a, b) => {
+                        if (leaderboardMetric === 'signups') return b.signups - a.signups;
+                        if (leaderboardMetric === 'members') return b.members - a.members;
+                        return b.mrr - a.mrr;
+                    });
+            };
+
+            // Get all signups flat list
+            const getAllSignups = () => {
+                const allSignups = [];
+                entries.forEach(entry => {
+                    entry.signups.forEach(signup => {
+                        allSignups.push({
+                            ...signup,
+                            date: entry.date,
+                            teamMember: entry.teamMember,
+                            entryId: entry.id
+                        });
+                    });
+                });
+                return allSignups.sort((a, b) => new Date(b.date) - new Date(a.date));
+            };
+
+            // Backup/Restore
+            const downloadBackup = () => {
+                const backup = {
+                    version: '1.0',
+                    exportDate: new Date().toISOString(),
+                    entries: entries,
+                    settings: { goal, openingDate }
+                };
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sherwood_presales_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            };
+
+            const handleRestore = async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                try {
+                    const text = await file.text();
+                    const backup = JSON.parse(text);
+                    
+                    if (!backup.entries || !Array.isArray(backup.entries)) {
+                        alert('Invalid backup file format');
+                        return;
+                    }
+
+                    if (confirm(`This backup contains ${backup.entries.length} entries. Merge with existing data?`)) {
+                        for (const entry of backup.entries) {
+                            const { id, ...entryData } = entry;
+                            await window.firestoreAddDoc(window.firestoreCollection(window.firebaseDB, 'presales_entries'), entryData);
+                        }
+                        
+                        if (backup.settings) {
+                            if (backup.settings.goal) {
+                                setGoal(backup.settings.goal);
+                                localStorage.setItem('presalesGoal', backup.settings.goal);
+                            }
+                            if (backup.settings.openingDate) {
+                                setOpeningDate(backup.settings.openingDate);
+                                localStorage.setItem('presalesOpeningDate', backup.settings.openingDate);
+                            }
+                        }
+                        
+                        await loadEntriesFromFirebase();
+                        alert('Backup restored successfully!');
+                    }
+                } catch (error) {
+                    console.error('Error restoring backup:', error);
+                    alert('Error reading backup file.');
+                }
+                
+                event.target.value = '';
+            };
+
+            const getTierBadgeClass = (tier) => {
+                if (tier === 'Escentials') return 'tier-escentials';
+                if (tier === 'Escentials+') return 'tier-escentials-plus';
+                return 'tier-unlimited';
+            };
+
+            if (loading) {
+                return <div className="container" style={{ textAlign: 'center', padding: '50px' }}>Loading...</div>;
+            }
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>🐾 SHERWOOD PRE-SALES TRACKER 🐾</h1>
+                        <div className="subtitle">Membership Sign-ups Before Grand Opening</div>
+                    </div>
+
+                    {/* Goal Progress & Countdown */}
+                    <div style={{ display: 'grid', gridTemplateColumns: openingDate ? '2fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
+                        <div className="goal-container">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h3 style={{ margin: 0, color: '#0077B6' }}>🎯 Pre-Sale Goal: {goal} Memberships</h3>
+                                <button onClick={() => setShowSettings(!showSettings)} className="btn" style={{ padding: '8px 16px', background: '#6b7280' }}>
+                                    ⚙️ Settings
+                                </button>
+                            </div>
+                            <div className="progress-bar-container">
+                                <div className="progress-bar" style={{ width: `${getGoalProgress()}%` }}>
+                                    {getTotalSignups()} / {goal} ({getGoalProgress().toFixed(1)}%)
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', marginTop: '15px' }}>
+                                <div>
+                                    <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#0077B6' }}>{getTotalSignups()}</div>
+                                    <div style={{ fontSize: '0.9em', color: '#666' }}>Total Sign-ups</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#FF6B35' }}>{getTotalMembers()}</div>
+                                    <div style={{ fontSize: '0.9em', color: '#666' }}>Unique Members</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#22c55e' }}>${getTotalMRR()}</div>
+                                    <div style={{ fontSize: '0.9em', color: '#666' }}>Monthly MRR</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {openingDate && (
+                            <div className="countdown-box">
+                                <div style={{ fontSize: '0.9em', opacity: 0.9 }}>Days Until Opening</div>
+                                <div className="countdown-number">
+                                    {getDaysUntilOpening() > 0 ? getDaysUntilOpening() : '🎉'}
+                                </div>
+                                <div style={{ fontSize: '0.9em', opacity: 0.9 }}>
+                                    {getDaysUntilOpening() > 0 ? new Date(openingDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "It's Opening Day!"}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Settings Panel */}
+                    {showSettings && (
+                        <div className="form-box" style={{ marginBottom: '20px' }}>
+                            <h3 style={{ color: '#0077B6', marginTop: 0 }}>⚙️ Settings</h3>
+                            <div className="form-grid">
+                                <div>
+                                    <label className="form-label">Pre-Sale Goal</label>
+                                    <input
+                                        type="number"
+                                        value={goal}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value) || 250;
+                                            setGoal(val);
+                                            localStorage.setItem('presalesGoal', val);
+                                        }}
+                                        className="form-input"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="form-label">Grand Opening Date</label>
+                                    <input
+                                        type="date"
+                                        value={openingDate}
+                                        onChange={(e) => {
+                                            setOpeningDate(e.target.value);
+                                            localStorage.setItem('presalesOpeningDate', e.target.value);
+                                        }}
+                                        className="form-input"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Controls */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="btn">
+                                {showForm ? '✖ Cancel' : '+ Add Sign-ups'}
+                            </button>
+                            {entries.length > 0 && (
+                                <button onClick={downloadBackup} className="btn" style={{ background: '#6b7280' }}>
+                                    💾 Backup
+                                </button>
+                            )}
+                            <button onClick={() => fileInputRef.current?.click()} className="btn" style={{ background: '#0ea5e9' }}>
+                                📂 Restore
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleRestore}
+                                accept=".json"
+                                style={{ display: 'none' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <label style={{ fontSize: '0.9em', color: '#666' }}>Your Name:</label>
+                            <input
+                                type="text"
+                                value={userName}
+                                onChange={(e) => {
+                                    setUserName(e.target.value);
+                                    localStorage.setItem('presalesUserName', e.target.value);
+                                }}
+                                className="form-input"
+                                placeholder="Enter your name"
+                                style={{ width: '150px' }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Undo Toast */}
+                    {showUndoToast && (
+                        <div style={{
+                            position: 'fixed',
+                            bottom: '20px',
+                            right: '20px',
+                            background: '#333',
+                            color: 'white',
+                            padding: '15px 20px',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px',
+                            zIndex: 1000
+                        }}>
+                            <span>Entry deleted</span>
+                            <button onClick={undoDelete} style={{ background: '#FF6B35', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
+                                Undo
+                            </button>
+                            <button onClick={() => setShowUndoToast(false)} style={{ background: 'transparent', color: 'white', border: 'none', cursor: 'pointer', fontSize: '1.2em' }}>
+                                ✕
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Entry Form */}
+                    {showForm && (
+                        <div className="form-box">
+                            <h2 style={{ color: '#0077B6', marginTop: 0 }}>
+                                {editingEntry ? '✏️ Edit Entry' : '📝 New Sign-up Entry'}
+                            </h2>
+                            
+                            <div className="form-grid" style={{ marginBottom: '20px' }}>
+                                <div>
+                                    <label className="form-label">Date</label>
+                                    <input
+                                        type="date"
+                                        value={currentEntry.date}
+                                        onChange={(e) => setCurrentEntry(prev => ({ ...prev, date: e.target.value }))}
+                                        className="form-input"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="form-label">Your Name</label>
+                                    <input
+                                        type="text"
+                                        value={currentEntry.teamMember || userName}
+                                        onChange={(e) => setCurrentEntry(prev => ({ ...prev, teamMember: e.target.value }))}
+                                        className="form-input"
+                                        placeholder="Enter your name"
+                                    />
+                                </div>
+                            </div>
+
+                            <h3 style={{ color: '#0077B6', borderBottom: '2px solid #00A0DC', paddingBottom: '10px' }}>
+                                Sign-ups ({currentEntry.signups.length})
+                            </h3>
+
+                            {currentEntry.signups.map((signup, index) => (
+                                <div key={index} className="signup-card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                        <strong style={{ color: '#0077B6' }}>Sign-up #{index + 1}</strong>
+                                        {currentEntry.signups.length > 1 && (
+                                            <button onClick={() => removeSignupRow(index)} className="btn-danger" style={{ padding: '5px 10px', fontSize: '0.85em', border: 'none', borderRadius: '4px', cursor: 'pointer', color: 'white' }}>
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="form-grid">
+                                        <div>
+                                            <label className="form-label">Member Name *</label>
+                                            <input
+                                                type="text"
+                                                value={signup.memberName}
+                                                onChange={(e) => updateSignup(index, 'memberName', e.target.value)}
+                                                className="form-input"
+                                                placeholder="John Smith"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="form-label">Phone</label>
+                                            <input
+                                                type="tel"
+                                                value={signup.phone}
+                                                onChange={(e) => updateSignup(index, 'phone', e.target.value)}
+                                                className="form-input"
+                                                placeholder="(555) 123-4567"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="form-label">Email</label>
+                                            <input
+                                                type="email"
+                                                value={signup.email}
+                                                onChange={(e) => updateSignup(index, 'email', e.target.value)}
+                                                className="form-input"
+                                                placeholder="john@email.com"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="form-label">Dog Name *</label>
+                                            <input
+                                                type="text"
+                                                value={signup.dogName}
+                                                onChange={(e) => updateSignup(index, 'dogName', e.target.value)}
+                                                className="form-input"
+                                                placeholder="Buddy"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="form-label">Dog Breed</label>
+                                            <input
+                                                type="text"
+                                                value={signup.dogBreed}
+                                                onChange={(e) => updateSignup(index, 'dogBreed', e.target.value)}
+                                                className="form-input"
+                                                placeholder="Golden Retriever"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="form-label">Membership Tier</label>
+                                            <select
+                                                value={signup.tier}
+                                                onChange={(e) => updateSignup(index, 'tier', e.target.value)}
+                                                className="form-input"
+                                            >
+                                                <option value="Escentials">Escentials ($29/mo)</option>
+                                                <option value="Escentials+">Escentials+ ($39/mo)</option>
+                                                <option value="Unlimited Plus">Unlimited Plus ($59/mo)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button onClick={addSignupRow} className="btn" style={{ marginTop: '10px', marginBottom: '20px' }}>
+                                + Add Another Sign-up
+                            </button>
+
+                            <div style={{ marginTop: '20px' }}>
+                                <label className="form-label">Daily Report / Notes</label>
+                                <textarea
+                                    value={currentEntry.dailyReport}
+                                    onChange={(e) => setCurrentEntry(prev => ({ ...prev, dailyReport: e.target.value }))}
+                                    className="form-input"
+                                    rows="4"
+                                    placeholder="End of day summary, notes, observations..."
+                                    style={{ resize: 'vertical' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                                <button onClick={saveEntry} className="btn btn-success">
+                                    {editingEntry ? '✓ Update Entry' : '✓ Save Entry'}
+                                </button>
+                                <button onClick={() => { resetForm(); setShowForm(false); }} className="btn btn-cancel">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* View Tabs */}
+                    <div className="view-tabs">
+                        <button onClick={() => setView('dashboard')} className={`tab ${view === 'dashboard' ? 'active' : ''}`}>
+                            📊 Dashboard
+                        </button>
+                        <button onClick={() => setView('entries')} className={`tab ${view === 'entries' ? 'active' : ''}`}>
+                            📅 Daily Entries
+                        </button>
+                        <button onClick={() => setView('signups')} className={`tab ${view === 'signups' ? 'active' : ''}`}>
+                            📋 All Sign-ups
+                        </button>
+                        <button onClick={() => setView('leaderboard')} className={`tab ${view === 'leaderboard' ? 'active' : ''}`}>
+                            🏆 Leaderboard
+                        </button>
+                    </div>
+
+                    {/* Dashboard View */}
+                    {view === 'dashboard' && (
+                        <div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                                <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#0077B6' }}>{getTotalSignups()}</div>
+                                    <div style={{ color: '#666' }}>Total Memberships</div>
+                                </div>
+                                <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#FF6B35' }}>{getTotalMembers()}</div>
+                                    <div style={{ color: '#666' }}>Unique Members</div>
+                                </div>
+                                <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#22c55e' }}>${getTotalMRR()}</div>
+                                    <div style={{ color: '#666' }}>Projected MRR</div>
+                                </div>
+                                <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '2.5em', fontWeight: 'bold', color: '#8b5cf6' }}>{goal - getTotalSignups()}</div>
+                                    <div style={{ color: '#666' }}>Remaining to Goal</div>
+                                </div>
+                            </div>
+
+                            {/* Tier Breakdown */}
+                            <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
+                                <h3 style={{ color: '#0077B6', marginTop: 0 }}>Membership Tier Breakdown</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '20px' }}>
+                                    {Object.keys(tierPricing).map(tier => {
+                                        const count = getAllSignups().filter(s => s.tier === tier).length;
+                                        const revenue = count * tierPricing[tier];
+                                        return (
+                                            <div key={tier} style={{ textAlign: 'center', padding: '15px', background: '#f8f8f8', borderRadius: '8px' }}>
+                                                <span className={`tier-badge ${getTierBadgeClass(tier)}`}>{tier}</span>
+                                                <div style={{ fontSize: '1.8em', fontWeight: 'bold', marginTop: '10px' }}>{count}</div>
+                                                <div style={{ color: '#666', fontSize: '0.9em' }}>${revenue}/mo</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Recent Activity */}
+                            <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                                <h3 style={{ color: '#0077B6', marginTop: 0 }}>Recent Sign-ups</h3>
+                                {getAllSignups().slice(0, 5).map((signup, idx) => (
+                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #e0e0e0' }}>
+                                        <div>
+                                            <strong>{signup.memberName}</strong> - {signup.dogName}
+                                            <div style={{ fontSize: '0.85em', color: '#666' }}>by {signup.teamMember} on {signup.date}</div>
+                                        </div>
+                                        <span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span>
+                                    </div>
+                                ))}
+                                {getAllSignups().length === 0 && (
+                                    <p style={{ color: '#666', textAlign: 'center' }}>No sign-ups yet. Add your first one!</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Daily Entries View */}
+                    {view === 'entries' && (
+                        <div>
+                            {entries.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+                                    <p style={{ fontSize: '1.2em' }}>No entries yet. Click "Add Sign-ups" to get started!</p>
+                                </div>
+                            ) : (
+                                entries.map(entry => (
+                                    <div key={entry.id} className="form-box" style={{ marginBottom: '20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0, color: '#0077B6' }}>{entry.date}</h3>
+                                                <p style={{ margin: '5px 0 0 0', color: '#666' }}>by {entry.teamMember} • {entry.signups.length} sign-up(s)</p>
+                                            </div>
+                                            <div>
+                                                <button onClick={() => editEntry(entry)} className="edit-btn">✏️ Edit</button>
+                                                <button onClick={() => deleteEntry(entry.id)} className="delete-btn">🗑 Delete</button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ display: 'grid', gap: '10px' }}>
+                                            {entry.signups.map((signup, idx) => (
+                                                <div key={idx} style={{ background: 'white', padding: '12px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div>
+                                                        <strong>{signup.memberName}</strong> - {signup.dogName} ({signup.dogBreed || 'N/A'})
+                                                        <div style={{ fontSize: '0.85em', color: '#666' }}>{signup.phone} • {signup.email}</div>
+                                                    </div>
+                                                    <span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {entry.dailyReport && (
+                                            <div style={{ marginTop: '15px', padding: '12px', background: '#fff8f0', borderRadius: '6px', borderLeft: '3px solid #FF6B35' }}>
+                                                <strong style={{ color: '#FF6B35' }}>Daily Report:</strong>
+                                                <p style={{ margin: '5px 0 0 0', whiteSpace: 'pre-wrap' }}>{entry.dailyReport}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+
+                    {/* All Sign-ups View */}
+                    {view === 'signups' && (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table className="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Member Name</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Dog Name</th>
+                                        <th>Breed</th>
+                                        <th>Tier</th>
+                                        <th>Signed By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {getAllSignups().map((signup, idx) => (
+                                        <tr key={idx}>
+                                            <td>{signup.date}</td>
+                                            <td><strong>{signup.memberName}</strong></td>
+                                            <td>{signup.phone || '-'}</td>
+                                            <td>{signup.email || '-'}</td>
+                                            <td>{signup.dogName}</td>
+                                            <td>{signup.dogBreed || '-'}</td>
+                                            <td><span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span></td>
+                                            <td>{signup.teamMember}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {getAllSignups().length === 0 && (
+                                <p style={{ textAlign: 'center', color: '#666', padding: '30px' }}>No sign-ups yet.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Leaderboard View */}
+                    {view === 'leaderboard' && (
+                        <div>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label className="form-label">Rank By:</label>
+                                <select
+                                    value={leaderboardMetric}
+                                    onChange={(e) => setLeaderboardMetric(e.target.value)}
+                                    className="form-input"
+                                    style={{ width: 'auto', minWidth: '200px' }}
+                                >
+                                    <option value="signups">Total Sign-ups (Dogs)</option>
+                                    <option value="members">Total Members (People)</option>
+                                    <option value="mrr">Total MRR Generated</option>
+                                </select>
+                            </div>
+
+                            {getLeaderboardData().length === 0 ? (
+                                <p style={{ textAlign: 'center', color: '#666', padding: '30px' }}>No data yet. Start adding sign-ups!</p>
+                            ) : (
+                                getLeaderboardData().map((person, idx) => (
+                                    <div key={person.name} className="leaderboard-item">
+                                        <div className={`leaderboard-rank ${idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : ''}`}>
+                                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                                        </div>
+                                        <div style={{ flex: 1, marginLeft: '15px' }}>
+                                            <div style={{ fontWeight: 600, fontSize: '1.1em' }}>{person.name}</div>
+                                            <div style={{ fontSize: '0.9em', color: '#666' }}>
+                                                {person.signups} sign-ups • {person.members} members • ${person.mrr}/mo MRR
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#0077B6' }}>
+                                            {leaderboardMetric === 'signups' && person.signups}
+                                            {leaderboardMetric === 'members' && person.members}
+                                            {leaderboardMetric === 'mrr' && `$${person.mrr}`}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#0077B6', marginTop: '40px' }}>
+                        <span style={{ color: '#FF6B35', fontSize: '1.5em' }}>🐾</span>
+                        <strong> SCENTHOUND SHERWOOD</strong> - Coming Soon!
+                        <span style={{ color: '#FF6B35', fontSize: '1.5em' }}> 🐾</span>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<PreSalesTracker />, document.getElementById('root'));
+    </script>
+</body>
+</html>
