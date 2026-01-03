@@ -678,7 +678,8 @@
                 dogBreed: '',
                 dogBreedLevel: null,
                 tier: 'Escentials',
-                myTimeLink: ''
+                myTimeLink: '',
+                regFeeCollected: false
             };
 
             const [currentEntry, setCurrentEntry] = useState({
@@ -891,6 +892,24 @@
                 }, 0);
             };
 
+            const getRegFeesByMember = () => {
+                const memberFees = {};
+                entries.forEach(entry => {
+                    const member = entry.teamMember;
+                    if (!memberFees[member]) {
+                        memberFees[member] = 0;
+                    }
+                    entry.signups.forEach(signup => {
+                        if (signup.regFeeCollected) {
+                            memberFees[member]++;
+                        }
+                    });
+                });
+                return Object.entries(memberFees)
+                    .map(([name, regFees]) => ({ name, regFees }))
+                    .sort((a, b) => b.regFees - a.regFees);
+            };
+
             const getGoalProgress = () => {
                 const total = getTotalSignups();
                 return Math.min((total / goal) * 100, 100);
@@ -978,7 +997,7 @@
                     return;
                 }
 
-                const headers = ['Date', 'Member Name', 'Phone', 'Email', 'Dog Name', 'Breed', 'Breed Level', 'Tier', 'Monthly Price', 'MyTime Profile', 'Signed By'];
+                const headers = ['Date', 'Member Name', 'Phone', 'Email', 'Dog Name', 'Breed', 'Breed Level', 'Tier', 'Monthly Price', 'Reg Fee Collected', 'MyTime Profile', 'Signed By'];
                 const rows = allSignups.map(signup => [
                     signup.date,
                     signup.memberName,
@@ -989,6 +1008,7 @@
                     signup.dogBreedLevel || '',
                     signup.tier,
                     tierPricing[signup.tier] || '',
+                    signup.regFeeCollected ? 'Yes' : 'No',
                     signup.myTimeLink || '',
                     signup.teamMember
                 ]);
@@ -1066,8 +1086,8 @@
             return (
                 <div className="container">
                     <div className="header">
-                        <h1>🐾 SHERWOOD PRESALES TRACKER 🐾</h1>
-                        <div className="subtitle">Membership Presale Sign-ups Before Grand Opening</div>
+                        <h1>🐾 SHERWOOD PRE-SALES TRACKER 🐾</h1>
+                        <div className="subtitle">Membership Sign-ups Before Grand Opening</div>
                     </div>
 
                     {/* Goal Progress & Countdown */}
@@ -1084,7 +1104,7 @@
                                     {getTotalSignups()} / {goal} ({getGoalProgress().toFixed(1)}%)
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', marginTop: '15px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', marginTop: '15px', flexWrap: 'wrap', gap: '15px' }}>
                                 <div>
                                     <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#0077B6' }}>{getTotalSignups()}</div>
                                     <div style={{ fontSize: '0.9em', color: '#666' }}>Total Sign-ups</div>
@@ -1098,6 +1118,21 @@
                                     <div style={{ fontSize: '0.9em', color: '#666' }}>Monthly MRR</div>
                                 </div>
                             </div>
+                            
+                            {/* Reg Fees by Team Member */}
+                            {getRegFeesByMember().length > 0 && (
+                                <div style={{ marginTop: '20px', padding: '15px', background: '#f8f8f8', borderRadius: '8px' }}>
+                                    <div style={{ fontWeight: '600', color: '#0077B6', marginBottom: '10px' }}>💰 Reg Fees Collected by Team Member</div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+                                        {getRegFeesByMember().map(member => (
+                                            <div key={member.name} style={{ background: 'white', padding: '8px 14px', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                                                <span style={{ fontWeight: '500' }}>{member.name}:</span>
+                                                <span style={{ marginLeft: '6px', fontWeight: '700', color: '#22c55e' }}>{member.regFees}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {openingDate && (
@@ -1358,6 +1393,17 @@
                                                 placeholder="Paste MyTime profile URL here..."
                                             />
                                         </div>
+                                        <div>
+                                            <label className="form-label">Registration Fee Collected? <span style={{ color: '#ef4444' }}>*</span></label>
+                                            <select
+                                                value={signup.regFeeCollected ? 'yes' : 'no'}
+                                                onChange={(e) => updateSignup(index, 'regFeeCollected', e.target.value === 'yes')}
+                                                className="form-input"
+                                            >
+                                                <option value="no">No - Waived</option>
+                                                <option value="yes">Yes - $30 Collected</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -1467,13 +1513,16 @@
                                                                 </span>
                                                             )})
                                                             <div style={{ fontSize: '0.85em', color: '#666' }}>{signup.phone} • {signup.email}</div>
-                                                            {signup.myTimeLink && (
-                                                                <div style={{ fontSize: '0.85em', marginTop: '4px' }}>
+                                                            <div style={{ fontSize: '0.85em', marginTop: '4px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                                                {signup.myTimeLink && (
                                                                     <a href={signup.myTimeLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0077B6' }}>
                                                                         📋 MyTime Profile
                                                                     </a>
-                                                                </div>
-                                                            )}
+                                                                )}
+                                                                <span style={{ color: signup.regFeeCollected ? '#22c55e' : '#999' }}>
+                                                                    {signup.regFeeCollected ? '✅ Reg Fee Collected' : '⏭️ Reg Fee Waived'}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                         <span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span>
                                                     </div>
@@ -1506,6 +1555,7 @@
                                         <th>Dog Name</th>
                                         <th>Breed</th>
                                         <th>Tier</th>
+                                        <th>Reg Fee</th>
                                         <th>MyTime</th>
                                         <th>Signed By</th>
                                     </tr>
@@ -1527,6 +1577,9 @@
                                                 )}
                                             </td>
                                             <td><span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span></td>
+                                            <td style={{ color: signup.regFeeCollected ? '#22c55e' : '#999' }}>
+                                                {signup.regFeeCollected ? '✅ Yes' : 'No'}
+                                            </td>
                                             <td>
                                                 {signup.myTimeLink ? (
                                                     <a href={signup.myTimeLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0077B6' }}>
