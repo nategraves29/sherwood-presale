@@ -670,16 +670,20 @@
                 'Unlimited +': 59
             };
 
-            const emptySignup = {
-                memberName: '',
-                phone: '',
-                email: '',
+            const emptyDog = {
                 dogName: '',
                 dogBreed: '',
                 dogBreedLevel: null,
                 tier: 'Escentials',
-                myTimeLink: '',
                 regFeeCollected: false
+            };
+
+            const emptySignup = {
+                memberName: '',
+                phone: '',
+                email: '',
+                myTimeLink: '',
+                dogs: [{ ...emptyDog }]
             };
 
             const [currentEntry, setCurrentEntry] = useState({
@@ -719,7 +723,7 @@
             const addSignupRow = () => {
                 setCurrentEntry(prev => ({
                     ...prev,
-                    signups: [...prev.signups, { ...emptySignup }]
+                    signups: [...prev.signups, { ...emptySignup, dogs: [{ ...emptyDog }] }]
                 }));
             };
 
@@ -741,6 +745,44 @@
                 }));
             };
 
+            const addDogToSignup = (signupIndex) => {
+                setCurrentEntry(prev => ({
+                    ...prev,
+                    signups: prev.signups.map((signup, i) => 
+                        i === signupIndex 
+                            ? { ...signup, dogs: [...signup.dogs, { ...emptyDog }] }
+                            : signup
+                    )
+                }));
+            };
+
+            const removeDogFromSignup = (signupIndex, dogIndex) => {
+                setCurrentEntry(prev => ({
+                    ...prev,
+                    signups: prev.signups.map((signup, i) => 
+                        i === signupIndex && signup.dogs.length > 1
+                            ? { ...signup, dogs: signup.dogs.filter((_, di) => di !== dogIndex) }
+                            : signup
+                    )
+                }));
+            };
+
+            const updateDog = (signupIndex, dogIndex, field, value) => {
+                setCurrentEntry(prev => ({
+                    ...prev,
+                    signups: prev.signups.map((signup, i) => 
+                        i === signupIndex 
+                            ? {
+                                ...signup,
+                                dogs: signup.dogs.map((dog, di) =>
+                                    di === dogIndex ? { ...dog, [field]: value } : dog
+                                )
+                            }
+                            : signup
+                    )
+                }));
+            };
+
             const saveEntry = async () => {
                 // Validate team member name
                 const teamMemberName = currentEntry.teamMember?.trim() || userName?.trim();
@@ -757,17 +799,30 @@
                     const signupMissing = [];
                     const signupNum = index + 1;
                     
+                    // Check pet parent info
                     if (!signup.memberName?.trim()) signupMissing.push('Member Name');
                     if (!signup.phone?.trim()) signupMissing.push('Phone');
                     if (!signup.email?.trim()) signupMissing.push('Email');
-                    if (!signup.dogName?.trim()) signupMissing.push('Dog Name');
-                    if (!signup.dogBreed?.trim()) signupMissing.push('Dog Breed');
                     if (!signup.myTimeLink?.trim()) signupMissing.push('MyTime Profile Link');
                     
+                    // Check each dog
+                    const validDogs = [];
+                    signup.dogs?.forEach((dog, dogIndex) => {
+                        const dogMissing = [];
+                        if (!dog.dogName?.trim()) dogMissing.push('Dog Name');
+                        if (!dog.dogBreed?.trim()) dogMissing.push('Dog Breed');
+                        
+                        if (dogMissing.length > 0) {
+                            signupMissing.push(`Dog #${dogIndex + 1}: ${dogMissing.join(', ')}`);
+                        } else {
+                            validDogs.push(dog);
+                        }
+                    });
+                    
                     if (signupMissing.length > 0) {
-                        missingFields.push(`Sign-up #${signupNum}: ${signupMissing.join(', ')}`);
-                    } else {
-                        validSignups.push(signup);
+                        missingFields.push(`Pet Parent #${signupNum}: ${signupMissing.join(', ')}`);
+                    } else if (validDogs.length > 0) {
+                        validSignups.push({ ...signup, dogs: validDogs });
                     }
                 });
 
@@ -777,7 +832,7 @@
                 }
 
                 if (validSignups.length === 0) {
-                    alert('Please add at least one complete sign-up.');
+                    alert('Please add at least one complete sign-up with pet parent info and at least one dog.');
                     return;
                 }
 
@@ -811,17 +866,38 @@
                 setCurrentEntry({
                     date: new Date().toISOString().split('T')[0],
                     teamMember: userName,
-                    signups: [{ ...emptySignup }],
+                    signups: [{ ...emptySignup, dogs: [{ ...emptyDog }] }],
                     dailyReport: ''
                 });
                 setEditingEntry(null);
             };
 
             const editEntry = (entry) => {
+                // Handle legacy data that doesn't have dogs array
+                const migratedSignups = entry.signups.map(signup => {
+                    if (signup.dogs) {
+                        return signup; // Already has new structure
+                    }
+                    // Migrate old structure to new structure
+                    return {
+                        memberName: signup.memberName,
+                        phone: signup.phone,
+                        email: signup.email,
+                        myTimeLink: signup.myTimeLink || '',
+                        dogs: [{
+                            dogName: signup.dogName,
+                            dogBreed: signup.dogBreed,
+                            dogBreedLevel: signup.dogBreedLevel,
+                            tier: signup.tier,
+                            regFeeCollected: signup.regFeeCollected || false
+                        }]
+                    };
+                });
+                
                 setCurrentEntry({
                     date: entry.date,
                     teamMember: entry.teamMember,
-                    signups: entry.signups,
+                    signups: migratedSignups,
                     dailyReport: entry.dailyReport || ''
                 });
                 setEditingEntry(entry);
@@ -870,8 +946,35 @@
             };
 
             // Calculate totals
+            // Helper to flatten signups - handles both old and new data structures
+            const getFlattenedSignups = (entry) => {
+                const flattened = [];
+                entry.signups.forEach(signup => {
+                    if (signup.dogs && signup.dogs.length > 0) {
+                        // New structure with dogs array
+                        signup.dogs.forEach(dog => {
+                            flattened.push({
+                                memberName: signup.memberName,
+                                phone: signup.phone,
+                                email: signup.email,
+                                myTimeLink: signup.myTimeLink,
+                                dogName: dog.dogName,
+                                dogBreed: dog.dogBreed,
+                                dogBreedLevel: dog.dogBreedLevel,
+                                tier: dog.tier,
+                                regFeeCollected: dog.regFeeCollected
+                            });
+                        });
+                    } else {
+                        // Old structure - single dog per signup
+                        flattened.push(signup);
+                    }
+                });
+                return flattened;
+            };
+
             const getTotalSignups = () => {
-                return entries.reduce((sum, entry) => sum + entry.signups.length, 0);
+                return entries.reduce((sum, entry) => sum + getFlattenedSignups(entry).length, 0);
             };
 
             const getTotalMembers = () => {
@@ -888,7 +991,7 @@
 
             const getTotalMRR = () => {
                 return entries.reduce((sum, entry) => {
-                    return sum + entry.signups.reduce((s, signup) => s + (tierPricing[signup.tier] || 0), 0);
+                    return sum + getFlattenedSignups(entry).reduce((s, signup) => s + (tierPricing[signup.tier] || 0), 0);
                 }, 0);
             };
 
@@ -899,7 +1002,7 @@
                     if (!memberFees[member]) {
                         memberFees[member] = 0;
                     }
-                    entry.signups.forEach(signup => {
+                    getFlattenedSignups(entry).forEach(signup => {
                         if (signup.regFeeCollected) {
                             memberFees[member]++;
                         }
@@ -907,6 +1010,7 @@
                 });
                 return Object.entries(memberFees)
                     .map(([name, regFees]) => ({ name, regFees }))
+                    .filter(m => m.regFees > 0)
                     .sort((a, b) => b.regFees - a.regFees);
             };
 
@@ -934,10 +1038,14 @@
                         teamStats[member] = { signups: 0, members: new Set(), mrr: 0 };
                     }
                     
-                    entry.signups.forEach(signup => {
+                    const flatSignups = getFlattenedSignups(entry);
+                    flatSignups.forEach(signup => {
                         teamStats[member].signups++;
                         teamStats[member].mrr += tierPricing[signup.tier] || 0;
-                        
+                    });
+                    
+                    // Count unique members (pet parents)
+                    entry.signups.forEach(signup => {
                         const memberId = signup.email?.toLowerCase() || signup.phone || signup.memberName.toLowerCase();
                         teamStats[member].members.add(memberId);
                     });
@@ -961,7 +1069,7 @@
             const getAllSignups = () => {
                 const allSignups = [];
                 entries.forEach(entry => {
-                    entry.signups.forEach(signup => {
+                    getFlattenedSignups(entry).forEach(signup => {
                         allSignups.push({
                             ...signup,
                             date: entry.date,
@@ -1302,20 +1410,22 @@
                             </div>
 
                             <h3 style={{ color: '#0077B6', borderBottom: '2px solid #00A0DC', paddingBottom: '10px' }}>
-                                Sign-ups ({currentEntry.signups.length})
+                                Pet Parents ({currentEntry.signups.length})
                             </h3>
 
                             {currentEntry.signups.map((signup, index) => (
-                                <div key={index} className="signup-card">
+                                <div key={index} className="signup-card" style={{ marginBottom: '20px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                                        <strong style={{ color: '#0077B6' }}>Sign-up #{index + 1}</strong>
+                                        <strong style={{ color: '#0077B6', fontSize: '1.1em' }}>🧑 Pet Parent #{index + 1}</strong>
                                         {currentEntry.signups.length > 1 && (
                                             <button onClick={() => removeSignupRow(index)} className="btn-danger" style={{ padding: '5px 10px', fontSize: '0.85em', border: 'none', borderRadius: '4px', cursor: 'pointer', color: 'white' }}>
-                                                Remove
+                                                Remove Pet Parent
                                             </button>
                                         )}
                                     </div>
-                                    <div className="form-grid">
+                                    
+                                    {/* Pet Parent Info */}
+                                    <div className="form-grid" style={{ marginBottom: '20px' }}>
                                         <div>
                                             <label className="form-label">Member Name <span style={{ color: '#ef4444' }}>*</span></label>
                                             <input
@@ -1347,43 +1457,6 @@
                                             />
                                         </div>
                                         <div>
-                                            <label className="form-label">Dog Name <span style={{ color: '#ef4444' }}>*</span></label>
-                                            <input
-                                                type="text"
-                                                value={signup.dogName}
-                                                onChange={(e) => updateSignup(index, 'dogName', e.target.value)}
-                                                className="form-input"
-                                                placeholder="Buddy"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="form-label">
-                                                Dog Breed <span style={{ color: '#ef4444' }}>*</span>
-                                                {signup.dogBreedLevel && (
-                                                    <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '8px' }}>
-                                                        Level {signup.dogBreedLevel}
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <BreedAutocomplete
-                                                value={signup.dogBreed}
-                                                onChange={(val) => updateSignup(index, 'dogBreed', val)}
-                                                onLevelChange={(level) => updateSignup(index, 'dogBreedLevel', level)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="form-label">Membership Tier <span style={{ color: '#ef4444' }}>*</span></label>
-                                            <select
-                                                value={signup.tier}
-                                                onChange={(e) => updateSignup(index, 'tier', e.target.value)}
-                                                className="form-input"
-                                            >
-                                                <option value="Escentials">Escentials ($29/mo)</option>
-                                                <option value="Escentials+">Escentials+ ($39/mo)</option>
-                                                <option value="Unlimited +">Unlimited + ($59/mo)</option>
-                                            </select>
-                                        </div>
-                                        <div style={{ gridColumn: '1 / -1' }}>
                                             <label className="form-label">MyTime Profile Link <span style={{ color: '#ef4444' }}>*</span></label>
                                             <input
                                                 type="url"
@@ -1393,23 +1466,92 @@
                                                 placeholder="Paste MyTime profile URL here..."
                                             />
                                         </div>
-                                        <div>
-                                            <label className="form-label">Registration Fee Collected? <span style={{ color: '#ef4444' }}>*</span></label>
-                                            <select
-                                                value={signup.regFeeCollected ? 'yes' : 'no'}
-                                                onChange={(e) => updateSignup(index, 'regFeeCollected', e.target.value === 'yes')}
-                                                className="form-input"
+                                    </div>
+
+                                    {/* Dogs Section */}
+                                    <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                            <strong style={{ color: '#FF6B35' }}>🐕 Dogs ({signup.dogs?.length || 0})</strong>
+                                            <button 
+                                                onClick={() => addDogToSignup(index)} 
+                                                className="btn" 
+                                                style={{ padding: '6px 12px', fontSize: '0.85em' }}
                                             >
-                                                <option value="no">No - Waived</option>
-                                                <option value="yes">Yes - $30 Collected</option>
-                                            </select>
+                                                + Add Another Dog
+                                            </button>
                                         </div>
+
+                                        {(signup.dogs || []).map((dog, dogIndex) => (
+                                            <div key={dogIndex} style={{ background: 'white', padding: '12px', borderRadius: '6px', marginBottom: '10px', border: '1px solid #e0e0e0' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                    <span style={{ fontWeight: '500', color: '#666' }}>Dog #{dogIndex + 1}</span>
+                                                    {signup.dogs.length > 1 && (
+                                                        <button 
+                                                            onClick={() => removeDogFromSignup(index, dogIndex)} 
+                                                            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8em' }}
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="form-grid">
+                                                    <div>
+                                                        <label className="form-label">Dog Name <span style={{ color: '#ef4444' }}>*</span></label>
+                                                        <input
+                                                            type="text"
+                                                            value={dog.dogName}
+                                                            onChange={(e) => updateDog(index, dogIndex, 'dogName', e.target.value)}
+                                                            className="form-input"
+                                                            placeholder="Buddy"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="form-label">
+                                                            Dog Breed <span style={{ color: '#ef4444' }}>*</span>
+                                                            {dog.dogBreedLevel && (
+                                                                <span className={`level-badge ${getLevelBadgeClass(dog.dogBreedLevel)}`} style={{ marginLeft: '8px' }}>
+                                                                    Level {dog.dogBreedLevel}
+                                                                </span>
+                                                            )}
+                                                        </label>
+                                                        <BreedAutocomplete
+                                                            value={dog.dogBreed}
+                                                            onChange={(val) => updateDog(index, dogIndex, 'dogBreed', val)}
+                                                            onLevelChange={(level) => updateDog(index, dogIndex, 'dogBreedLevel', level)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="form-label">Membership Tier <span style={{ color: '#ef4444' }}>*</span></label>
+                                                        <select
+                                                            value={dog.tier}
+                                                            onChange={(e) => updateDog(index, dogIndex, 'tier', e.target.value)}
+                                                            className="form-input"
+                                                        >
+                                                            <option value="Escentials">Escentials ($29/mo)</option>
+                                                            <option value="Escentials+">Escentials+ ($39/mo)</option>
+                                                            <option value="Unlimited +">Unlimited + ($59/mo)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="form-label">Reg Fee Collected?</label>
+                                                        <select
+                                                            value={dog.regFeeCollected ? 'yes' : 'no'}
+                                                            onChange={(e) => updateDog(index, dogIndex, 'regFeeCollected', e.target.value === 'yes')}
+                                                            className="form-input"
+                                                        >
+                                                            <option value="no">No - Waived</option>
+                                                            <option value="yes">Yes - $30 Collected</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}
 
-                            <button onClick={addSignupRow} className="btn" style={{ marginTop: '10px', marginBottom: '20px' }}>
-                                + Add Another Dog
+                            <button onClick={addSignupRow} className="btn btn-secondary" style={{ marginTop: '10px', marginBottom: '20px' }}>
+                                + Add Another Pet Parent
                             </button>
 
                             <div style={{ marginTop: '20px' }}>
@@ -1492,7 +1634,7 @@
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
                                             <div>
                                                 <h3 style={{ margin: 0, color: '#0077B6' }}>{entry.date}</h3>
-                                                <p style={{ margin: '5px 0 0 0', color: '#666' }}>by {entry.teamMember} • {entry.signups.length} sign-up(s)</p>
+                                                <p style={{ margin: '5px 0 0 0', color: '#666' }}>by {entry.teamMember} • {getFlattenedSignups(entry).length} dog(s)</p>
                                             </div>
                                             <div>
                                                 <button onClick={() => editEntry(entry)} className="edit-btn">✏️ Edit</button>
@@ -1500,31 +1642,41 @@
                                             </div>
                                         </div>
                                         
-                                        <div style={{ display: 'grid', gap: '10px' }}>
+                                        <div style={{ display: 'grid', gap: '15px' }}>
                                             {entry.signups.map((signup, idx) => (
-                                                <div key={idx} style={{ background: 'white', padding: '12px', borderRadius: '6px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <div>
-                                                            <strong>{signup.memberName}</strong> - {signup.dogName} 
-                                                            ({signup.dogBreed || 'N/A'}
-                                                            {signup.dogBreedLevel && (
-                                                                <span className={`level-badge ${getLevelBadgeClass(signup.dogBreedLevel)}`} style={{ marginLeft: '4px', fontSize: '0.7em' }}>
-                                                                    L{signup.dogBreedLevel}
-                                                                </span>
-                                                            )})
-                                                            <div style={{ fontSize: '0.85em', color: '#666' }}>{signup.phone} • {signup.email}</div>
-                                                            <div style={{ fontSize: '0.85em', marginTop: '4px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                                                {signup.myTimeLink && (
-                                                                    <a href={signup.myTimeLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0077B6' }}>
-                                                                        📋 MyTime Profile
-                                                                    </a>
-                                                                )}
-                                                                <span style={{ color: signup.regFeeCollected ? '#22c55e' : '#999' }}>
-                                                                    {signup.regFeeCollected ? '✅ Reg Fee Collected' : '⏭️ Reg Fee Waived'}
-                                                                </span>
+                                                <div key={idx} style={{ background: 'white', padding: '15px', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+                                                    {/* Pet Parent Info */}
+                                                    <div style={{ marginBottom: '10px' }}>
+                                                        <strong style={{ fontSize: '1.1em' }}>{signup.memberName}</strong>
+                                                        <div style={{ fontSize: '0.85em', color: '#666' }}>{signup.phone} • {signup.email}</div>
+                                                        {signup.myTimeLink && (
+                                                            <a href={signup.myTimeLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0077B6', fontSize: '0.85em' }}>
+                                                                📋 MyTime Profile
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {/* Dogs */}
+                                                    <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px' }}>
+                                                        {(signup.dogs || [{ dogName: signup.dogName, dogBreed: signup.dogBreed, dogBreedLevel: signup.dogBreedLevel, tier: signup.tier, regFeeCollected: signup.regFeeCollected }]).map((dog, dogIdx) => (
+                                                            <div key={dogIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: dogIdx < (signup.dogs?.length || 1) - 1 ? '1px solid #e2e8f0' : 'none' }}>
+                                                                <div>
+                                                                    <span style={{ fontWeight: '500' }}>🐕 {dog.dogName}</span>
+                                                                    <span style={{ color: '#666', marginLeft: '8px' }}>
+                                                                        ({dog.dogBreed || 'N/A'}
+                                                                        {dog.dogBreedLevel && (
+                                                                            <span className={`level-badge ${getLevelBadgeClass(dog.dogBreedLevel)}`} style={{ marginLeft: '4px', fontSize: '0.7em' }}>
+                                                                                L{dog.dogBreedLevel}
+                                                                            </span>
+                                                                        )})
+                                                                    </span>
+                                                                    <span style={{ marginLeft: '10px', fontSize: '0.8em', color: dog.regFeeCollected ? '#22c55e' : '#999' }}>
+                                                                        {dog.regFeeCollected ? '✅ Reg Fee' : '⏭️ Waived'}
+                                                                    </span>
+                                                                </div>
+                                                                <span className={`tier-badge ${getTierBadgeClass(dog.tier)}`}>{dog.tier}</span>
                                                             </div>
-                                                        </div>
-                                                        <span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             ))}
