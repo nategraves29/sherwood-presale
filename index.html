@@ -2271,7 +2271,7 @@ Generated: ${new Date().toLocaleString()}`;
                                                     
                                                     {/* Dogs */}
                                                     <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px' }}>
-                                                        {(signup.dogs || [{ dogName: signup.dogName, dogBreed: signup.dogBreed, dogBreedLevel: signup.dogBreedLevel, tier: signup.tier, regFeeCollected: signup.regFeeCollected }]).map((dog, dogIdx) => (
+                                                        {(signup.dogs || [{ dogName: signup.dogName, dogBreed: signup.dogBreed, dogBreedLevel: signup.dogBreedLevel, tier: signup.tier, regFeeCollected: signup.regFeeCollected, notes: signup.notes }]).map((dog, dogIdx) => (
                                                             <div key={dogIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: dogIdx < (signup.dogs?.length || 1) - 1 ? '1px solid #e2e8f0' : 'none' }}>
                                                                 <div>
                                                                     <span style={{ fontWeight: '500' }}>🐕 {dog.dogName}</span>
@@ -2286,6 +2286,11 @@ Generated: ${new Date().toLocaleString()}`;
                                                                     <span style={{ marginLeft: '10px', fontSize: '0.8em', color: dog.regFeeCollected ? '#22c55e' : '#999' }}>
                                                                         {dog.regFeeCollected ? '✅ Reg Fee' : '⏭️ Waived'}
                                                                     </span>
+                                                                    {dog.notes && (
+                                                                        <div style={{ fontSize: '0.85em', color: '#666', fontStyle: 'italic', marginTop: '4px' }}>
+                                                                            📝 {dog.notes}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                                 <span className={`tier-badge ${getTierBadgeClass(dog.tier)}`}>{dog.tier}</span>
                                                             </div>
@@ -2423,6 +2428,7 @@ Generated: ${new Date().toLocaleString()}`;
                                                 {sortConfig.key === 'tier' && <span className="sort-indicator">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>}
                                             </th>
                                             <th>Reg Fee</th>
+                                            <th>Notes</th>
                                             <th>MyTime</th>
                                             <th className="sortable" onClick={() => handleSort('teamMember')}>
                                                 Signed By
@@ -2450,6 +2456,9 @@ Generated: ${new Date().toLocaleString()}`;
                                                 <td><span className={`tier-badge ${getTierBadgeClass(signup.tier)}`}>{signup.tier}</span></td>
                                                 <td style={{ color: signup.regFeeCollected ? '#22c55e' : '#999' }}>
                                                     {signup.regFeeCollected ? '✅ Yes' : 'No'}
+                                                </td>
+                                                <td style={{ color: '#666', fontStyle: 'italic', fontSize: '0.9em', maxWidth: '150px' }}>
+                                                    {signup.notes || '-'}
                                                 </td>
                                                 <td>
                                                     {signup.myTimeLink ? (
