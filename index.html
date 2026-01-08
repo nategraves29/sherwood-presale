@@ -899,10 +899,27 @@
             const teamChartInstance = useRef(null);
             const progressChartInstance = useRef(null);
 
-            const tierPricing = {
+            const baseTierPricing = {
                 'Escentials': 29,
                 'Escentials+': 39,
                 'Unlimited +': 59
+            };
+
+            // Escentials price increases to $34 after 100 sign-ups
+            const ESCENTIALS_THRESHOLD = 100;
+            const ESCENTIALS_PRICE_AFTER_THRESHOLD = 34;
+
+            // Get the price for a signup based on its position in the order
+            const getSignupPrice = (tier, signupIndex, totalEscentialsBefore) => {
+                if (tier === 'Escentials' && totalEscentialsBefore >= ESCENTIALS_THRESHOLD) {
+                    return ESCENTIALS_PRICE_AFTER_THRESHOLD;
+                }
+                return baseTierPricing[tier] || 0;
+            };
+
+            // For display in dropdowns (shows both prices for Escentials)
+            const getTierDisplayPrice = (tier) => {
+                return baseTierPricing[tier] || 0;
             };
 
             const emptyDog = {
@@ -1225,10 +1242,32 @@
                 return uniqueEmails.size;
             };
 
+            // Get all signups sorted by date for proper pricing calculation
+            const getSignupsWithPricing = () => {
+                const allSignups = getAllSignups();
+                // Sort by date ascending to determine order
+                const sorted = [...allSignups].sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                let escentialsCount = 0;
+                return sorted.map(signup => {
+                    let price;
+                    if (signup.tier === 'Escentials') {
+                        price = escentialsCount < ESCENTIALS_THRESHOLD ? 29 : ESCENTIALS_PRICE_AFTER_THRESHOLD;
+                        escentialsCount++;
+                    } else {
+                        price = baseTierPricing[signup.tier] || 0;
+                    }
+                    return { ...signup, price };
+                });
+            };
+
             const getTotalMRR = () => {
-                return entries.reduce((sum, entry) => {
-                    return sum + getFlattenedSignups(entry).reduce((s, signup) => s + (tierPricing[signup.tier] || 0), 0);
-                }, 0);
+                const signupsWithPricing = getSignupsWithPricing();
+                return signupsWithPricing.reduce((sum, signup) => sum + signup.price, 0);
+            };
+
+            const getEscentialsCount = () => {
+                return getAllSignups().filter(s => s.tier === 'Escentials').length;
             };
 
             const getRegFeesByMember = () => {
@@ -1276,6 +1315,14 @@
             // Leaderboard data
             const getLeaderboardData = () => {
                 const teamStats = {};
+                const signupsWithPricing = getSignupsWithPricing();
+                
+                // Build a price lookup map
+                const priceMap = new Map();
+                signupsWithPricing.forEach(s => {
+                    const key = `${s.date}-${s.memberName}-${s.dogName}`;
+                    priceMap.set(key, s.price);
+                });
                 
                 entries.forEach(entry => {
                     const member = entry.teamMember;
@@ -1286,7 +1333,8 @@
                     const flatSignups = getFlattenedSignups(entry);
                     flatSignups.forEach(signup => {
                         teamStats[member].signups++;
-                        teamStats[member].mrr += tierPricing[signup.tier] || 0;
+                        const key = `${entry.date}-${signup.memberName}-${signup.dogName}`;
+                        teamStats[member].mrr += priceMap.get(key) || baseTierPricing[signup.tier] || 0;
                     });
                     
                     // Count unique members (pet parents)
@@ -1401,10 +1449,11 @@
             // Get today's stats
             const getTodayStats = () => {
                 const today = new Date().toISOString().split('T')[0];
-                const todaySignups = getAllSignups().filter(s => s.date === today);
+                const signupsWithPricing = getSignupsWithPricing();
+                const todaySignups = signupsWithPricing.filter(s => s.date === today);
                 return {
                     count: todaySignups.length,
-                    mrr: todaySignups.reduce((sum, s) => sum + (tierPricing[s.tier] || 0), 0)
+                    mrr: todaySignups.reduce((sum, s) => sum + s.price, 0)
                 };
             };
 
@@ -1415,14 +1464,15 @@
                 startOfWeek.setDate(today.getDate() - today.getDay());
                 startOfWeek.setHours(0, 0, 0, 0);
                 
-                const weekSignups = getAllSignups().filter(s => {
+                const signupsWithPricing = getSignupsWithPricing();
+                const weekSignups = signupsWithPricing.filter(s => {
                     const signupDate = new Date(s.date + 'T00:00:00');
                     return signupDate >= startOfWeek;
                 });
                 
                 return {
                     count: weekSignups.length,
-                    mrr: weekSignups.reduce((sum, s) => sum + (tierPricing[s.tier] || 0), 0)
+                    mrr: weekSignups.reduce((sum, s) => sum + s.price, 0)
                 };
             };
 
@@ -1544,7 +1594,8 @@ Dog: ${signup.dogName} (${signup.dogBreed || 'N/A'}) - ${signup.tier}`;
             const getTeamMemberStats = (memberName) => {
                 if (!memberName) return null;
                 
-                const memberSignups = getAllSignups().filter(s => s.teamMember === memberName);
+                const signupsWithPricing = getSignupsWithPricing();
+                const memberSignups = signupsWithPricing.filter(s => s.teamMember === memberName);
                 
                 // Tier breakdown
                 const tiers = { 'Escentials': 0, 'Escentials+': 0, 'Unlimited +': 0 };
@@ -1565,8 +1616,8 @@ Dog: ${signup.dogName} (${signup.dogBreed || 'N/A'}) - ${signup.tier}`;
                 const regFeesCollected = memberSignups.filter(s => s.regFeeCollected).length;
                 const regFeesWaived = memberSignups.filter(s => !s.regFeeCollected).length;
                 
-                // Total MRR
-                const totalMRR = memberSignups.reduce((sum, s) => sum + (tierPricing[s.tier] || 0), 0);
+                // Total MRR - use price from signupsWithPricing
+                const totalMRR = memberSignups.reduce((sum, s) => sum + s.price, 0);
                 
                 // Unique members (pet parents)
                 const uniqueMembers = new Set();
@@ -1634,7 +1685,8 @@ Dog: ${signup.dogName} (${signup.dogBreed || 'N/A'}) - ${signup.tier}`;
                     toDate = lastOfLastMonth.toISOString().split('T')[0];
                 }
                 
-                const signups = getAllSignups().filter(s => 
+                const signupsWithPricing = getSignupsWithPricing();
+                const signups = signupsWithPricing.filter(s => 
                     s.date >= fromDate && s.date <= toDate
                 );
                 
@@ -1647,9 +1699,15 @@ Dog: ${signup.dogName} (${signup.dogBreed || 'N/A'}) - ${signup.tier}`;
                 signups.forEach(s => {
                     tierCounts[s.tier] = (tierCounts[s.tier] || 0) + 1;
                     teamCounts[s.teamMember] = (teamCounts[s.teamMember] || 0) + 1;
-                    totalMRR += tierPricing[s.tier] || 0;
+                    totalMRR += s.price;
                     if (s.regFeeCollected) regFeesCollected++;
                 });
+                
+                // Get Escentials pricing info
+                const escentialsCount = getEscentialsCount();
+                const escentialsNote = escentialsCount >= ESCENTIALS_THRESHOLD 
+                    ? `(first 100 at $29, rest at $${ESCENTIALS_PRICE_AFTER_THRESHOLD})` 
+                    : `($29, increases to $${ESCENTIALS_PRICE_AFTER_THRESHOLD} after 100)`;
                 
                 // Build report text
                 let report = `SCENTHOUND SHERWOOD - PRESALES REPORT
@@ -1664,7 +1722,7 @@ Reg Fees Collected: ${regFeesCollected} ($${regFeesCollected * 30})
 
 BREAKDOWN BY TIER
 -----------------
-Escentials ($29):    ${tierCounts['Escentials']} sign-ups
+Escentials ${escentialsNote}:    ${tierCounts['Escentials']} sign-ups
 Escentials+ ($39):   ${tierCounts['Escentials+']} sign-ups
 Unlimited + ($59):   ${tierCounts['Unlimited +']} sign-ups
 
@@ -1708,7 +1766,7 @@ Generated: ${new Date().toLocaleString()}`;
 
             // Backup - CSV
             const downloadBackupCSV = () => {
-                const allSignups = getAllSignups();
+                const allSignups = getSignupsWithPricing();
                 if (allSignups.length === 0) {
                     alert('No data to export.');
                     return;
@@ -1724,7 +1782,7 @@ Generated: ${new Date().toLocaleString()}`;
                     signup.dogBreed || '',
                     signup.dogBreedLevel || '',
                     signup.tier,
-                    tierPricing[signup.tier] || '',
+                    signup.price,
                     signup.regFeeCollected ? 'Yes' : 'No',
                     signup.notes || '',
                     signup.myTimeLink || '',
@@ -2182,7 +2240,9 @@ Generated: ${new Date().toLocaleString()}`;
                                                             onChange={(e) => updateDog(index, dogIndex, 'tier', e.target.value)}
                                                             className="form-input"
                                                         >
-                                                            <option value="Escentials">Escentials ($29/mo)</option>
+                                                            <option value="Escentials">
+                                                                Escentials ({getEscentialsCount() >= ESCENTIALS_THRESHOLD ? `$${ESCENTIALS_PRICE_AFTER_THRESHOLD}` : '$29'}/mo)
+                                                            </option>
                                                             <option value="Escentials+">Escentials+ ($39/mo)</option>
                                                             <option value="Unlimited +">Unlimited + ($59/mo)</option>
                                                         </select>
@@ -2248,14 +2308,31 @@ Generated: ${new Date().toLocaleString()}`;
                             <div style={{ background: 'white', padding: '25px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                                 <h3 style={{ color: '#0077B6', marginTop: 0 }}>Tier Breakdown</h3>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
-                                    {Object.keys(tierPricing).map(tier => {
-                                        const count = getAllSignups().filter(s => s.tier === tier).length;
-                                        const revenue = count * tierPricing[tier];
+                                    {Object.keys(baseTierPricing).map(tier => {
+                                        const signupsWithPricing = getSignupsWithPricing();
+                                        const tierSignups = signupsWithPricing.filter(s => s.tier === tier);
+                                        const count = tierSignups.length;
+                                        const revenue = tierSignups.reduce((sum, s) => sum + s.price, 0);
+                                        const escentialsCount = getEscentialsCount();
+                                        
                                         return (
                                             <div key={tier} style={{ textAlign: 'center', padding: '15px', background: '#f8f8f8', borderRadius: '8px' }}>
                                                 <span className={`tier-badge ${getTierBadgeClass(tier)}`}>{tier}</span>
                                                 <div style={{ fontSize: '1.8em', fontWeight: 'bold', marginTop: '10px' }}>{count}</div>
                                                 <div style={{ color: '#666', fontSize: '0.9em' }}>${revenue}/mo</div>
+                                                {tier === 'Escentials' && (
+                                                    <div style={{ 
+                                                        marginTop: '8px', 
+                                                        fontSize: '0.75em', 
+                                                        color: escentialsCount >= ESCENTIALS_THRESHOLD ? '#22c55e' : '#f59e0b',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        {escentialsCount >= ESCENTIALS_THRESHOLD 
+                                                            ? `✓ Now $${ESCENTIALS_PRICE_AFTER_THRESHOLD}/mo` 
+                                                            : `${ESCENTIALS_THRESHOLD - escentialsCount} until $${ESCENTIALS_PRICE_AFTER_THRESHOLD}/mo`
+                                                        }
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })}
